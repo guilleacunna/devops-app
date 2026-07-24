@@ -1,0 +1,11 @@
+#Seguridad
+.env
+
+#Archivos de configuración
+__pycache__/
+*.pyc   
+.venv/
+
+# Archivos del sistema
+.DS_Store 
+Thumbs.db

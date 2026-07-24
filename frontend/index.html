@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - DevOps App</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 40px 20px; }
+        .container { width: 100%; max-width: 900px; background: #ffffff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); padding: 30px; }
+        header { margin-bottom: 30px; border-bottom: 2px solid #eef2f5; padding-bottom: 15px; }
+        header h1 { color: #2c3e50; font-size: 26px; }
+        header p { color: #7f8c8d; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .card { background: #fafbfc; border: 1px solid #e1e8ed; border-radius: 8px; padding: 20px; }
+        .card h2 { font-size: 18px; color: #34495e; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .form-group input:focus { outline: none; border-color: #3498db; }
+        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #219150; }
+        .status-msg { margin-top: 10px; font-size: 13px; padding: 8px 12px; border-radius: 4px; display: none; }
+        .status-msg.success { background-color: #d4edda; color: #155724; display: block; }
+        .status-msg.error { background-color: #f8d7da; color: #721c24; display: block; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e1e8ed; }
+        th { background-color: #f8f9fa; color: #2c3e50; font-weight: 600; }
+        .badge { display: inline-block; padding: 2px 8px; background-color: #3498db; color: white; border-radius: 12px; font-size: 11px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🚀 Dashboard de Usuarios</h1>
+            <p>DevOps Stack: Nginx + Flask + PostgreSQL + WSL2</p>
+        </header>
+
+        <div class="grid">
+            <!-- Formulario -->
+            <div class="card">
+                <h2>Registrar Nuevo Usuario</h2>
+                <form id="userForm">
+                    <div class="form-group">
+                        <label for="nombre">Nombre Completo</label>
+                        <input type="text" id="nombre" placeholder="Ej: Guillermo Acuña" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico</label>
+                        <input type="email" id="email" placeholder="Ej: guillermo@example.com" required>
+                    </div>
+                    <button type="submit">Guardar Usuario</button>
+                    <div id="statusMsg" class="status-msg"></div>
+                </form>
+            </div>
+
+            <!-- Tabla de Usuarios -->
+            <div class="card">
+                <h2>Usuarios Registrados</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const userForm = document.getElementById('userForm');
+        const userTableBody = document.getElementById('userTableBody');
+        const statusMsg = document.getElementById('statusMsg');
+
+        // Cargar usuarios desde la API (/api/usuarios)
+        async function fetchUsuarios() {
+            try {
+                const res = await fetch('/api/usuarios');
+                const usuarios = await res.json();
+                userTableBody.innerHTML = '';
+
+                usuarios.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><span class="badge">#${user.id}</span></td>
+                        <td><strong>${escapeHtml(user.nombre)}</strong></td>
+                        <td>${escapeHtml(user.email)}</td>
+                    `;
+                    userTableBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error('Error al cargar usuarios:', err);
+            }
+        }
+
+        // Registrar usuario
+        userForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre').value;
+            const email = document.getElementById('email').value;
+
+            try {
+                const res = await fetch('/api/usuarios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, email })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    statusMsg.className = 'status-msg success';
+                    statusMsg.textContent = '¡Usuario registrado correctamente!';
+                    userForm.reset();
+                    fetchUsuarios();
+                } else {
+                    statusMsg.className = 'status-msg error';
+                    statusMsg.textContent = data.error || 'Error al guardar';
+                }
+            } catch (err) {
+                statusMsg.className = 'status-msg error';
+                statusMsg.textContent = 'Error de conexión con el servidor';
+            }
+        });
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        fetchUsuarios();
+    </script>
+</body>
+</html>
