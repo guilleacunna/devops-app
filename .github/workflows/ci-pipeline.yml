@@ -27,12 +27,12 @@ jobs:
 
       - name: Validar y contruir conteneodores con Docker Compose
         run: |
-          docker-compose config
-          docker-compose build
+          docker compose config
+          docker compose build
 
       - name: Probar arranque de contenedores
         run: |
-          docker-compose up -d
-          docker-compose ps
+          docker compose up -d
+          docker compose ps
           sleep 5
           docker compose down 
